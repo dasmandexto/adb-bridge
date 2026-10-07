@@ -76,10 +76,10 @@
 
 ## 💻 1. Як вбудувати віджет на будь-який сторонній сайт
 
-Ви можете вбудувати кнопку підключення Android у будь-який власний веб-сайт або внутрішню панель керування.
+Ви можете вбудувати кнопку підключення Android у будь-який власний веб-сайт або внутрішню панель керування всього у 3 прості кроки.
 
 ### Крок 1. Додайте заголовок у `<head>`
-Обов'язково додайте політику дозволів для WebUSB:
+Обов'язковий дозвіл для роботи WebUSB у браузері:
 ```html
 <meta http-equiv="Permissions-Policy" content="usb=(self)">
 ```
@@ -88,43 +88,104 @@
 > <iframe src="https://<ТВІЙ_ДОМЕН>/" allow="usb"></iframe>
 > ```
 
-### Крок 2. Вставте HTML-віджет у тіло сторінки
+### Крок 2. Вставте HTML-віджет у тіло сторінки (`<body>`)
 ```html
 <div class="adb-bridge-widget">
   <button id="adb-connect-btn">⚡ Підключити Android</button>
   <span id="adb-status">Очікування...</span>
+  <!-- Опціональний блок для виводу логів (якщо не потрібен — можна видалити) -->
+  <div id="adb-log-container" style="height: 120px; overflow-y: auto; background: #000; color: #00ff66; font-family: monospace; font-size: 12px; padding: 8px; border-radius: 6px; margin-top: 10px;"></div>
 </div>
 ```
 
-### Крок 3. Підключіть скрипт перед закриваючим тегом `</body>`
+### Крок 3. Вставте скрипти перед закриваючим тегом `</body>` (Одним суцільним шматком!)
+Скопіюйте та вставте весь цей блок безпосередньо перед `</body>`:
+
 ```html
+<!-- ================= ПОЧАТОК БЛОКУ ADB МОСТУ ================= -->
 <script src="https://<ТВІЙ_ДОМЕН>/adb-webusb-bridge.js"></script>
 <script>
   const bridge = new WebUsbAdbBridge({
-    wsUrl: 'wss://<ТВІЙ_ДОМЕН>/adb-bridge',
-    btnId: 'adb-connect-btn',
-    statusId: 'adb-status'
+    // Обов'язкові параметри:
+    wsUrl: 'wss://<ТВІЙ_ДОМЕН>/adb-bridge', // WSS-адреса вашого Debian-сервера
+    btnId: 'adb-connect-btn',               // ID кнопки підключення
+    statusId: 'adb-status',                 // ID блоку статусу
+
+    // Опціональні параметри (можна видалити, якщо не потрібні):
+    logId: 'adb-log-container',             // ID контейнера логів у браузері
+    onStatusChange: (status, text) => {
+      console.log('Статус мосту змінився:', status, text);
+    },
+    onStats: ({ bytesSent, bytesReceived }) => {
+      console.log(`Трафік: ⬆️ ${bytesSent} байт | ⬇️ ${bytesReceived} байт`);
+    },
+    onError: (error, friendlyMessage) => {
+      console.error('Помилка підключення:', friendlyMessage);
+    }
   });
 </script>
+<!-- ================= КІНЕЦЬ БЛОКУ ADB МОСТУ =================== -->
 ```
 
-#### Додаткові параметри конфігурації `WebUsbAdbBridge`:
-```javascript
-const bridge = new WebUsbAdbBridge({
-  wsUrl: 'wss://<ТВІЙ_ДОМЕН>/adb-bridge',
-  btnId: 'adb-connect-btn',
-  statusId: 'adb-status',
-  logId: 'my-log-container', // Опціонально: ID контейнера для логів
-  onStatusChange: (status, text) => {
-    console.log('Статус мосту змінився:', status, text);
-  },
-  onStats: ({ bytesSent, bytesReceived }) => {
-    console.log(`Трафік: ⬆️ ${bytesSent} байт | ⬇️ ${bytesReceived} байт`);
-  },
-  onError: (error, friendlyMessage) => {
-    console.error('Помилка підключення:', friendlyMessage);
-  }
-});
+---
+
+### 📄 Готовий повний шаблон сторінки (Copy-Paste Ready)
+
+Якщо вам потрібна окрема робоча сторінка з нуля, збережіть цей код в `index.html`:
+
+```html
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Обов'язкова політика дозволу WebUSB -->
+  <meta http-equiv="Permissions-Policy" content="usb=(self)">
+  <title>Керування Android через WebUSB ADB Bridge</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0d1117; color: #e6edf3; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 28px; width: 100%; max-width: 500px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    h2 { margin-top: 0; font-size: 20px; }
+    button { background: #238636; color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-bottom: 14px; }
+    button:hover { background: #2ea043; }
+    button.connected { background: #da3633; }
+    .status { display: block; font-size: 14px; color: #8b949e; margin-bottom: 14px; }
+    #adb-log-container { height: 120px; overflow-y: auto; background: #090d13; border: 1px solid #30363d; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 11px; text-align: left; color: #7ee787; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>📱 WebUSB ADB Bridge</h2>
+    <p style="font-size: 13px; color: #8b949e; margin-bottom: 20px;">Підключіть Android по USB та увімкніть налагодження по USB</p>
+
+    <!-- Віджет -->
+    <button id="adb-connect-btn">⚡ Підключити Android</button>
+    <span id="adb-status" class="status">Очікування...</span>
+    <div id="adb-log-container"></div>
+  </div>
+
+  <!-- ЄДИНИЙ БЛОК СКРИПТІВ ПЕРЕД ЗАКРИТТЯМ BODY -->
+  <script src="https://<ТВІЙ_ДОМЕН>/adb-webusb-bridge.js"></script>
+  <script>
+    const bridge = new WebUsbAdbBridge({
+      wsUrl: 'wss://<ТВІЙ_ДОМЕН>/adb-bridge',
+      btnId: 'adb-connect-btn',
+      statusId: 'adb-status',
+      logId: 'adb-log-container',
+      onStatusChange: (status, text) => {
+        console.log('Статус:', status, text);
+      },
+      onStats: ({ bytesSent, bytesReceived }) => {
+        console.log(`Трафік: ⬆️ ${bytesSent} B | ⬇️ ${bytesReceived} B`);
+      },
+      onError: (err, msg) => {
+        alert(msg);
+      }
+    });
+  </script>
+</body>
+</html>
 ```
 
 ---
