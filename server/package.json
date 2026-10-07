@@ -1,0 +1,29 @@
+{
+  "name": "adb-bridge-server",
+  "version": "1.0.0",
+  "description": "WebUSB-to-TCP ADB Bridge Daemon for Debian",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc -w"
+  },
+  "keywords": [
+    "adb",
+    "webusb",
+    "bridge",
+    "websocket",
+    "android",
+    "tcp"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.4.5"
+  }
+}

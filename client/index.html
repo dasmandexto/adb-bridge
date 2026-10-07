@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Permissions-Policy" content="usb=(self)">
+  <title>WebUSB-to-TCP ADB Bridge</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-icon">📱 ↔️ ⚡ ↔️ 🐧</div>
+      <h1>WebUSB-to-TCP ADB Bridge</h1>
+      <p class="subtitle">Дистанційне керування Android з консолі Debian через Windows Chrome WebUSB</p>
+    </header>
+
+    <!-- Quick instructions -->
+    <div class="card">
+      <h2 class="card-title">📋 Інструкція для користувача Windows:</h2>
+      <ol class="steps-list">
+        <li>Підключіть ваш Android смартфон до Windows через USB-кабель.</li>
+        <li>Увімкніть <b>«Налагодження по USB»</b> (USB Debugging) у меню «Для розробників» на телефоні.</li>
+        <li>Якщо на Windows запущено локальний adb, вимкніть його в PowerShell: <code class="code-inline">adb kill-server</code>.</li>
+        <li>Натисніть кнопку <b>«⚡ Підключити Android»</b> нижче та виберіть телефон у списку вікна Chrome.</li>
+        <li>Підтвердіть запит <i>«Дозволити налагодження по USB з цього комп'ютера?»</i> на екрані телефона.</li>
+      </ol>
+    </div>
+
+    <!-- Interactive Bridge Widget -->
+    <div class="card">
+      <h2 class="card-title">🔌 Керування підключенням:</h2>
+      <div class="adb-bridge-widget">
+        <button id="adb-connect-btn" class="btn-primary">⚡ Підключити Android</button>
+        <span id="adb-status" class="status-badge" data-status="idle">Очікування...</span>
+        
+        <div class="stats-bar">
+          <span>⬆️ Відправлено: <b id="bytes-sent">0 B</b></span>
+          <span>⬇️ Отримано: <b id="bytes-recv">0 B</b></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Terminal Log -->
+    <div class="card">
+      <h2 class="card-title">🖥️ Журнал подій клієнта:</h2>
+      <div class="terminal-card">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <span>webusb-bridge.log</span>
+        </div>
+        <div id="bridge-log" class="terminal-body">
+          <div class="log-line log-info">[INFO] Клієнтський модуль ініціалізовано. Готовий до підключення WebUSB.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Guide preview -->
+    <div class="card">
+      <h2 class="card-title">🐧 Команди для адміністратора на Debian:</h2>
+      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 8px;">
+        Після того, як статус вище зміниться на <b>«Міст активний»</b>, виконайте на Debian:
+      </p>
+      <pre class="code-block"><code># Швидке підключення однією командою:
+adb-go
+
+# Або вручну:
+adb connect 127.0.0.1:5555
+adb -s 127.0.0.1:5555 shell</code></pre>
+    </div>
+
+    <footer>
+      WebUSB-to-TCP ADB Bridge &copy; 2026 | Powered by Node.js, WebUSB &amp; Nginx
+    </footer>
+  </div>
+
+  <!-- Client Script -->
+  <script src="adb-webusb-bridge.js"></script>
+  <script>
+    // Initialize WebUSB ADB Bridge
+    const bridge = new WebUsbAdbBridge({
+      wsUrl: (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/adb-bridge',
+      btnId: 'adb-connect-btn',
+      statusId: 'adb-status',
+      logId: 'bridge-log',
+      onStats: ({ bytesSent, bytesReceived }) => {
+        function fmt(b) {
+          if (b === 0) return '0 B';
+          const k = 1024, s = ['B', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(b) / Math.log(k));
+          return (b / Math.pow(k, i)).toFixed(1) + ' ' + s[i];
+        }
+        const sentEl = document.getElementById('bytes-sent');
+        const recvEl = document.getElementById('bytes-recv');
+        if (sentEl) sentEl.textContent = fmt(bytesSent);
+        if (recvEl) recvEl.textContent = fmt(bytesReceived);
+      }
+    });
+  </script>
+</body>
+</html>
